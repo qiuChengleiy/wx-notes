@@ -1,0 +1,133 @@
+<style lang="less" src="../style/index.less"></style>
+
+<template>
+  <view class="list">
+  <!-- <view>
+    <button @tap="add" size="mini">添加列表</button>
+  </view>
+  
+    <block wx:for-items="{{list}}" wx:for-index="index" wx:for-item="item" wx:key="id">
+      <view @tap="tap" class="mylist">
+        <text>{{item.id}}</text>: {{item.title}} {{index}}
+      </view>
+    </block> -->
+
+ <!-- 循环组件 -->
+ <repeat for="{{list}}" index="index" item="item" key="index">
+  <view>{{index}} {{item.id}} {{item.title}} </view>
+</repeat>
+
+<!-- 静态传值 -->
+<view class="txt">
+<!-- <child title="num"></child> -->
+</view>
+
+<!-- 动态传值 -->
+<view class="txt">
+<child :title="datas" :syncTitle.sync="datas" :twoWayTitle="datas" @childFn.user="tap"></child>
+</view>
+
+
+
+<view>{{tests}} {{listsa}}111 {{datas}}</view>
+
+
+<panel>
+    <view slot="title">新的标题</view>
+    <view slot="content">
+        <text>新的内容</text>
+    </view>
+</panel>
+ </view>
+</template>
+
+
+<script>
+
+  import wepy from 'wepy'
+
+  import Child from './child'
+
+  export default class Study extends wepy.component {
+    data = {
+      list: [
+        {
+          id: '0',
+          title: 'loading1'
+        },
+        {
+          id: '1',
+          title: 'loading2'
+        },
+        {
+          id: '2',
+          title: 'loading3'
+        }
+      ],
+      num:0,
+      datas:'hahahaha'
+    }
+
+    components = {
+        child: Child
+    }
+
+    //计算
+    computed = {
+      listsa () {
+        this.list[0].id = '123456';
+        return this.list[0].id; 
+      },
+      tests () {
+          return 123;
+      }
+    }
+    //观察
+    watch = {
+      num (newValue,oldValue) {
+          console.log(`num value: ${oldValue} -> ${newValue}-> ${this.list[0].id}`)
+      }
+    }
+
+    events = {
+      'index-broadcast': (...args) => {
+        let $event = args[args.length - 1]
+        console.log(`${this.$name} receive ${$event.name} from ${$event.source.name}`)
+      },
+      'some-ev': (val,$event) => {
+          console.log(`${this.$name} -> ${$event.name}-> ${$event.source.$name}->${val} `) //study -> some-ev-> child-> i come 111 
+      }
+    };
+
+    methods = {
+      tap (val) {
+        // this.num = this.num + 1
+        console.log(this.$name + ' tap' +'->'+ val)
+      },
+      add () {
+        let len = this.list.length
+        this.list.push({id: len + 1, title: 'title_' + len})
+      }
+    }
+
+    onLoad () {
+        //父组件广播
+        this.$broadcast('some-parent','i send some info')
+
+        //对其他组件方法的直接调用
+        this.$invoke('child','testa','444');
+
+
+        setTimeout(() => {
+             this.num ++;
+             this.$apply();
+        },1000)
+
+        console.log(this.datas);
+        this.$apply();
+
+
+       
+    }
+  }
+</script>

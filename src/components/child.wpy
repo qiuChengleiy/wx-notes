@@ -1,0 +1,221 @@
+<style lang="less">
+  .toast{
+      height: 20rpx;
+  }
+</style>
+
+
+<template>
+    <view @tap="childFns">123
+         <view @tap.stop="tap">456</view>
+
+        <viwe>经度：{{longitude}}</viwe>  
+        <view>纬度：{{latitude}}</view>  
+        <view>地址：{{address}}</view>  
+        <view>城市：{{cityInfo.city}}</view>  
+
+
+
+        <toast class="toast"></toast>
+    </view>
+
+    
+
+
+   <!-- <view>
+    <slot name="title">默认标题</slot>
+    <slot name="content">默认内容</slot>
+</view> -->
+</template>
+
+
+<script>
+import wepy from 'wepy';
+import 'wepy-async-function'
+import TestMixin from '../mixins/test'
+import Toast from 'wepy-com-toast'
+
+//引入百度地图API
+import bmap from '../libs/bmap-wx.min.js'
+
+
+
+
+
+var ttt = [];  //定位成功回调对象
+    /* 获取定位地理位置 */  
+    // 新建bmap对象   
+    var BMap = new bmap.BMapWX({   
+        ak: 'EmKnVtp1n4MsmRANaWyf1oZhs2oBUVgt'
+    });   
+    var fail = function(data) {   
+        console.log(data);  
+    };   
+    var success = function(data) {   
+        //返回数据内，已经包含经纬度  
+        console.log(data);  
+        //使用wxMarkerData获取数据  
+        ttt[0] = data.wxMarkerData[0].address;    
+        //把所有数据放在初始化data内  
+       
+    }   
+    // 发起regeocoding检索请求   
+    BMap.regeocoding({   
+        fail: fail,   
+        success: success  
+    });  
+
+console.log(ttt);
+
+
+        //async  发起请求
+        async function request () {
+                    wx.request({
+                        url: 'http://localhost:8000/posts', //仅为示例，并非真实的接口地址
+                        header: {
+                            'content-type': 'application/json' // 默认值
+                        },
+                        success: function(res) {
+                            console.log(res.data)
+                        }
+                })
+        }
+
+        request();
+
+
+        wx.getLocation({
+            type: 'wgs84',
+            success: function(res) {
+                var latitude = res.latitude
+                var longitude = res.longitude
+                var speed = res.speed
+                var accuracy = res.accuracy
+
+                let locals = {
+                    latitude,longitude,speed,accuracy
+                }
+
+                console.log(locals);
+
+                //  wx.openLocation({
+                //     latitude: latitude,
+                //     longitude: longitude,
+                //     scale: 28
+                //   })
+            }
+})
+
+wx.getSystemInfo({
+  success: function(res) {
+    console.log(res.model)
+    console.log(res.pixelRatio)
+    console.log(res.windowWidth)
+    console.log(res.windowHeight)
+    console.log(res.language)
+    console.log(res.version)
+    console.log(res.platform)
+  }
+})
+
+
+
+
+export default class Child extends wepy.component {
+
+    props = {
+        //静态
+        title : String,
+
+        //动态
+        syncTitle : {
+            type: String,
+            default: 'null'
+        },
+
+        twoWayTitle : {
+            type:String,
+            default:'noting',
+            twoWay: true
+        }
+
+    };
+
+    data = {
+         ak:"EmKnVtp1n4MsmRANaWyf1oZhs2oBUVgt", //填写申请到的ak  
+        markers: [],  
+        longitude:'',   //经度  
+        latitude:'',    //纬度  
+        address:'',     //地址  
+        cityInfo:{}     //城市信息  
+
+    }
+
+    components = {
+        toast : Toast
+    }
+
+    mixins = [TestMixin];  // mixins混合  拿到公共部分  在事件中直接绑定 事件明是可以的  默认混合
+    //在wepy中 组件本身的方法先执行  minxin中后执行
+
+    methods = {
+        testa (val) {
+            console.log('调用 该组件方法 ',val)
+        },
+        childFns() {
+            console.log('www')
+            this.$emit('childFn',222);  // @event.user  自定义事件 由emit触发
+        },
+        tap() {
+            console.log('first .......')
+        }
+    }
+
+    events = {
+        'some-parent': (val,$event) => {
+             console.log(`${this.$name} -> ${$event.name}-> ${$event.source.$name}->${val} `)
+        }
+    }
+
+    onLoad () {   
+        
+        this.$invoke('toast', 'show', {
+            title: '系统繁忙',
+            });
+
+
+
+        this.address = ttt[0];
+        console.log(this.address);
+
+        console.log(this.mixin);
+
+        //emit 组件交互
+        this.$emit('some-ev','i come 111');
+
+
+        console.log(this.title);
+     
+        console.log(this.syncTitle);
+        console.log(this.twoWayTitle); 
+
+         //
+       // this.title = '678';
+        //console.log(this.$parent.datas); // hahahaha
+
+
+        this.twoWayTitle = '678';
+        this.$apply();   // 必须要有$apply  否则不会改变父组件的值
+        console.log(this.$parent.datas);   // 在父组件中 该值已经改变
+
+
+        this.$parent.datas = '999';
+        this.$parent.$apply();
+
+        console.log(this.title);
+        console.log(this.syncTitle); /// 999   有sync修饰的  在父组件数据改变时 会自动绑定到子组件上
+    };
+    
+}
+</script>
+
